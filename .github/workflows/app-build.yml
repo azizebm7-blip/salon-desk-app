@@ -9,19 +9,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Java & Build AAB
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y openjdk-17-jdk
-          export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-          export PATH=$JAVA_HOME/bin:$PATH
-          java -version
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Generate Android App Code
+        run: |
           mkdir -p app/src/main/java/com/salondesk/morocco
           mkdir -p app/src/main/res/layout
-          
-          echo "include ':app'" > settings.gradle
-          
+
+          cat << 'EOF' > settings.gradle
+          rootProject.name = "SalonDesk"
+          include ':app'
+          EOF
+
           cat << 'EOF' > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -86,8 +92,8 @@ jobs:
           }
           EOF
 
-          gradle wrapper --gradle-version 8.1.1
-          ./gradlew bundleRelease --no-daemon
+      - name: Build with Gradle
+        run: gradle bundleRelease --no-daemon
 
       - uses: actions/upload-artifact@v4
         with:
